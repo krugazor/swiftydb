@@ -8,12 +8,12 @@
 import Foundation
 
 /** Enum used to return the results of a query */
-public enum Result<A: Any>: BooleanType {
+public enum Result<A: Any>: Boolean {
     
     /** The result was successful. Contains any data returned from the query */
     case Success(A)
     /** The result was unsuccessful. Contains an error message */
-    case Error(ErrorType)
+    case Error(ErrorProtocol)
     
 // MARK: - Properties
     
@@ -34,7 +34,7 @@ public enum Result<A: Any>: BooleanType {
     }
     
     /** The thrown error. Nil if the query was a success */
-    public var error: ErrorType? {
+    public var error: ErrorProtocol? {
         if case .Error(let error) = self {
             return error
         }

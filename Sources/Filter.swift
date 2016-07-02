@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import TinySQLite
+import tinysqlite
 
 /** 
 An instance of the Filter class is used to filter query results
@@ -64,7 +64,7 @@ public class Filter: DictionaryLiteralConvertible {
             case .In, .NotIn:
                 let array = value as! [Value?]
                 let placeholderString = (0..<array.count).map {":\(uniquePropertyName)\($0)"}
-                                                         .joinWithSeparator(", ")
+                                                         .joined(separator: ", ")
 
                 return "\(propertyName) \(relationship.rawValue) (\(placeholderString))"
             }
@@ -233,7 +233,7 @@ public class Filter: DictionaryLiteralConvertible {
 // MARK: - Internal methods
     
     internal func whereStatement() -> String {
-        let statement = "WHERE " + self.components.map {$0.statement()}.joinWithSeparator(" AND ")
+        let statement = "WHERE " + self.components.map {$0.statement()}.joined(separator: " AND ")
         return statement
     }
     
@@ -242,7 +242,7 @@ public class Filter: DictionaryLiteralConvertible {
         
         for filterComponent in components {
             if let arrayValue = filterComponent.value as? [Value?] {
-                for (index, value) in arrayValue.enumerate() {
+                for (index, value) in arrayValue.enumerated() {
                     parameters["\(filterComponent.uniquePropertyName)\(index)"] = value as? SQLiteValue
                 }
             } else {
@@ -268,7 +268,7 @@ extension Filter {
     */
     
     public class func equal(propertyName: String, value: Value?) -> Filter {
-        return Filter().equal(propertyName, value: value)
+        return Filter().equal(propertyName: propertyName, value: value)
     }
     
     /** Evaluated as true if the value of the property is less than the provided value
@@ -279,7 +279,7 @@ extension Filter {
     - returns:                 `Filter` intance
     */
     public class func lessThan(propertyName: String, value: Value?) -> Filter {
-        return Filter().lessThan(propertyName, value: value)
+        return Filter().lessThan(propertyName: propertyName, value: value)
     }
     
     /** Evaluated as true if the value of the property is less or equal to the provided value
@@ -290,7 +290,7 @@ extension Filter {
     - returns:                 `Filter` intance
     */
     public class func lessOrEqual(propertyName: String, value: Value?) -> Filter {
-        return Filter().lessOrEqual(propertyName, value: value)
+        return Filter().lessOrEqual(propertyName: propertyName, value: value)
     }
     
     /** 
@@ -302,7 +302,7 @@ extension Filter {
     - returns:                 `Filter` intance
     */
     public class func greaterThan(propertyName: String, value: Value?) -> Filter {
-        return Filter().greaterThan(propertyName, value: value)
+        return Filter().greaterThan(propertyName: propertyName, value: value)
     }
     
     /**
@@ -314,7 +314,7 @@ extension Filter {
     - returns:                 `Filter` intance
     */
     public class func greaterOrEqual(propertyName: String, value: Value?) -> Filter {
-        return Filter().greaterOrEqual(propertyName, value: value)
+        return Filter().greaterOrEqual(propertyName: propertyName, value: value)
     }
     
     /** 
@@ -326,7 +326,7 @@ extension Filter {
     - returns:                 `Filter` intance
     */
     public class func notEqual(propertyName: String, value: Value?) -> Filter {
-        return Filter().notEqual(propertyName, value: value)
+        return Filter().notEqual(propertyName: propertyName, value: value)
     }
     
     /** 
@@ -338,7 +338,7 @@ extension Filter {
     - returns:                 `Filter` intance
     */
     public class func contains(propertyName: String, array: [Value?]) -> Filter {
-        return Filter().contains(propertyName, array: array)
+        return Filter().contains(propertyName: propertyName, array: array)
     }
     
     /** 
@@ -350,7 +350,7 @@ extension Filter {
     - returns:                 `Filter` intance
     */
     public class func notContains(propertyName: String, array: [Value?]) -> Filter {
-        return Filter().notContains(propertyName, array: array)
+        return Filter().notContains(propertyName: propertyName, array: array)
     }
     
     /** 
@@ -371,7 +371,7 @@ extension Filter {
     - returns:                 `Filter` intance
     */
     public class func like(propertyName: String, pattern: String) -> Filter {
-        return Filter().like(propertyName, pattern: pattern)
+        return Filter().like(propertyName: propertyName, pattern: pattern)
     }
     
     /**
@@ -392,6 +392,6 @@ extension Filter {
      - returns:                 `Filter` intance
      */
     public class func notLike(propertyName: String, pattern: String) -> Filter {
-        return Filter().notLike(propertyName, pattern: pattern)
+        return Filter().notLike(propertyName: propertyName, pattern: pattern)
     }
 }

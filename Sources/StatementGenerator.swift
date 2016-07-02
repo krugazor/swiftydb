@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import TinySQLite
+import tinysqlite
 internal enum SQLiteDatatype: String {
     case Text       = "TEXT"
     case Integer    = "INTEGER"
@@ -39,23 +39,23 @@ internal class StatementGenerator {
     
     internal class func createTableStatementForTypeRepresentedByObject <S: Storable> (object: S) -> String {
         
-        var statement = "CREATE TABLE " + tableNameForType(S) + " ("
+        var statement = "CREATE TABLE " + tableNameForType(type: S.self) + " ("
         
         /* Define all the columns of the table */
         var columnDefinitions: [String] = []
         
-        for propertyData in PropertyData.validPropertyDataForObject(object) {
+        for propertyData in PropertyData.validPropertyDataForObject(object: object) {
             var columnDefinition = "'\(propertyData.name!)' \(SQLiteDatatype(type: propertyData.type!)!.rawValue)"
             columnDefinition += propertyData.isOptional ? "" : " NOT NULL"
             
             columnDefinitions.append(columnDefinition)
         }
         
-        statement += columnDefinitions.joinWithSeparator(", ")
+        statement += columnDefinitions.joined(separator: ", ")
         
         /* Add a primary key constraint if provided */
         if let primaryKeysType = S.self as? PrimaryKeys.Type {
-            statement += ", PRIMARY KEY (\(primaryKeysType.primaryKeys().joinWithSeparator(", ")))"
+            statement += ", PRIMARY KEY (\(primaryKeysType.primaryKeys().joined(separator: ", ")))"
         }
         
         /* Conclude the statement and return */
@@ -65,25 +65,25 @@ internal class StatementGenerator {
     }
     
     internal class func insertStatementForType(type: Storable.Type, update: Bool) -> String {
-        var statement = "INSERT OR " + (update ? "REPLACE" : "ABORT") + " INTO " + tableNameForType(type)
+        var statement = "INSERT OR " + (update ? "REPLACE" : "ABORT") + " INTO " + tableNameForType(type: type)
         
-        let propertyData = PropertyData.validPropertyDataForObject(type.init())
+        let propertyData = PropertyData.validPropertyDataForObject(object: type.init())
         
         let columns = propertyData.map {"'\($0.name!)'"}
         let namedParameters = propertyData.map {":\($0.name!)"}
         
         /* Columns to be inserted */
-        statement += " (" + columns.joinWithSeparator(", ") + ") "
+        statement += " (" + columns.joined(separator: ", ") + ") "
         
         /* Values to be inserted */
-        statement += "VALUES (" + namedParameters.joinWithSeparator(", ") + ")"
+        statement += "VALUES (" + namedParameters.joined(separator: ", ") + ")"
         
         return statement
     }
     
     internal class func selectStatementForType(type: Storable.Type, matchingFilter filter: Filter?) -> String {
         
-        let tableName =  tableNameForType(type)
+        let tableName =  tableNameForType(type: type)
         
         var statement = "SELECT ALL * FROM \(tableName)"
         
@@ -98,7 +98,7 @@ internal class StatementGenerator {
     
     internal class func deleteStatementForType(type: Storable.Type, matchingFilter filter: Filter?) -> String {
         
-        let tableName =  tableNameForType(type)
+        let tableName =  tableNameForType(type: type)
         
         var statement = "DELETE FROM \(tableName)"
         

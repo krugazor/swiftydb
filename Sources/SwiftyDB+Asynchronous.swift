@@ -5,7 +5,8 @@
 //  Created by Øyvind Grimnes on 13/01/16.
 //
 
-import TinySQLite
+import tinysqlite
+import Foundation
 
 /** Support asynchronous queries */
 extension SwiftyDB {
@@ -25,7 +26,7 @@ extension SwiftyDB {
      */
     
     public func asyncAddObject <S: Storable> (object: S, update: Bool = true, withCompletionHandler completionHandler: ((Result<Bool>)->Void)? = nil) {
-        asyncAddObjects([object], update: update, withCompletionHandler: completionHandler)
+        asyncAddObjects(objects: [object], update: update, withCompletionHandler: completionHandler)
     }
     
     /**
@@ -41,7 +42,7 @@ extension SwiftyDB {
                 return
             }
             
-            completionHandler?(self!.addObjects(objects))
+            completionHandler?(self!.addObjects(objects: objects))
         }
     }
     
@@ -59,7 +60,7 @@ extension SwiftyDB {
                 return
             }
             
-            completionHandler(self!.dataForType(type, matchingFilter: filter))
+            completionHandler(self!.dataForType(type: type, matchingFilter: filter))
         }
     }
     
@@ -76,7 +77,7 @@ extension SwiftyDB {
                 return
             }
             
-            completionHandler?(self!.deleteObjectsForType(type, matchingFilter: filter))
+            completionHandler?(self!.deleteObjectsForType(type: type, matchingFilter: filter))
         }
     }
 }
@@ -95,7 +96,7 @@ extension SwiftyDB {
     public func asyncObjectsForType <D where D: Storable, D: NSObject> (type: D.Type, matchingFilter filter: Filter? = nil, withCompletionHandler completionHandler: ((Result<[D]>)->Void)) {
         
         dispatch_async(queue) { [unowned self] () -> Void in
-            completionHandler(self.objectsForType(type, matchingFilter: filter))
+            completionHandler(self.objectsForType(type: type, matchingFilter: filter))
         }
     }
 }

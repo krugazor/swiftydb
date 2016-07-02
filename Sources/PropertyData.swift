@@ -25,18 +25,18 @@ internal struct PropertyData {
         self.name = property.label
         
         let mirror = Mirror(reflecting: property.value)
-        isOptional = mirror.displayStyle == .Optional
-        value = unwrap(property.value) as? Value
+        isOptional = mirror.displayStyle == .optional
+        value = unwrap(value: property.value) as? Value
         
-        type = typeForMirror(mirror)
+        type = typeForMirror(mirror: mirror)
     }
     
     internal func typeForMirror(mirror: Mirror) -> Value.Type? {
         if !isOptional {
-            if mirror.displayStyle == .Collection {
+            if mirror.displayStyle == .collection {
                 return NSArray.self
             }
-            if mirror.displayStyle == .Dictionary {
+            if mirror.displayStyle == .dictionary {
                 return NSDictionary.self
             }
             return mirror.subjectType as? Value.Type
@@ -88,21 +88,21 @@ internal struct PropertyData {
     internal func unwrap(value: Any) -> Any? {
         let mirror = Mirror(reflecting: value)
         
-        if mirror.displayStyle == .Collection {
-            return NSKeyedArchiver.archivedDataWithRootObject(value as! NSArray)
+        if mirror.displayStyle == .collection {
+            return NSKeyedArchiver.archivedData(withRootObject: value as! NSArray)
         }
-        if mirror.displayStyle == .Dictionary {
-            return NSKeyedArchiver.archivedDataWithRootObject(value as! NSDictionary)
+        if mirror.displayStyle == .dictionary {
+            return NSKeyedArchiver.archivedData(withRootObject: value as! NSDictionary)
         }
 
         /* Raw value */
-        if mirror.displayStyle != .Optional {
+        if mirror.displayStyle != .optional {
             return value
         }
         
         /* The encapsulated optional value if not nil, otherwise nil */
         if let value = mirror.children.first?.value {
-            return unwrap(value)
+            return unwrap(value: value)
         }else{
             return nil
         }
@@ -111,10 +111,11 @@ internal struct PropertyData {
 
 extension PropertyData {
     internal static func validPropertyDataForObject (object: Storable) -> [PropertyData] {
-        return validPropertyDataForMirror(Mirror(reflecting: object))
+        return validPropertyDataForMirror(mirror: Mirror(reflecting: object))
     }
     
-    private static func validPropertyDataForMirror(mirror: Mirror, var ignoredProperties: Set<String> = []) -> [PropertyData] {
+    private static func validPropertyDataForMirror(mirror: Mirror, ignoredProperties: Set<String> = []) -> [PropertyData] {
+        var ignoredProperties = ignoredProperties
         if mirror.subjectType is IgnoredProperties.Type {
             ignoredProperties = ignoredProperties.union((mirror.subjectType as! IgnoredProperties.Type).ignoredProperties())
         }
@@ -122,8 +123,8 @@ extension PropertyData {
         var propertyData: [PropertyData] = []
         
         /* Allow inheritance from storable superclasses using reccursion */
-        if let superclassMirror = mirror.superclassMirror() where superclassMirror.subjectType is Storable.Type {
-            propertyData += validPropertyDataForMirror(superclassMirror, ignoredProperties: ignoredProperties)
+        if let superclassMirror = mirror.superclassMirror where superclassMirror.subjectType is Storable.Type {
+            propertyData += validPropertyDataForMirror(mirror: superclassMirror, ignoredProperties: ignoredProperties)
         }
         
         /* Map children to property data and filter out ignored or invalid properties */

@@ -7,7 +7,7 @@
 
 
 import Foundation
-import TinySQLite
+import tinysqlite
 
 
 /** All objects in the database must conform to the 'Storable' protocol */
@@ -59,7 +59,7 @@ public class SwiftyDB {
     */
     
     public init(databaseName: String) {
-        let documentsDir : String = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.DocumentDirectory, NSSearchPathDomainMask.UserDomainMask, true)[0]
+        let documentsDir : String = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.documentDirectory, NSSearchPathDomainMask.userDomainMask, true)[0]
         path = documentsDir+"/\(databaseName).sqlite"
         
         databaseQueue = DatabaseQueue(path: path)
@@ -78,7 +78,7 @@ public class SwiftyDB {
     */
     
     public func addObject <S: Storable> (object: S, update: Bool = true) -> Result<Bool> {
-        return self.addObjects([object], update: update)
+        return self.addObjects(objects: [object], update: update)
     }
     
     /**
@@ -96,14 +96,14 @@ public class SwiftyDB {
         }
         
         do {
-            if !(try tableExistsForType(S)) {
-                createTableForTypeRepresentedByObject(objects.first!)
+            if !(try tableExistsForType(type: S.self)) {
+                createTableForTypeRepresentedByObject(object: objects.first!)
             }
             
-            let insertStatement = StatementGenerator.insertStatementForType(S.self, update: update)
+            let insertStatement = StatementGenerator.insertStatementForType(type: S.self, update: update)
             
             try databaseQueue.transaction { (database) -> Void in
-                let statement = try database.prepare(insertStatement)
+                let statement = try database.prepare(query: insertStatement)
                 
                 defer {
                     /* If an error occurs, try to finalize the statement */
@@ -111,8 +111,8 @@ public class SwiftyDB {
                 }
                 
                 for object in objects {
-                    let data = self.dataFromObject(object)
-                    try statement.executeUpdate(data)
+                    let data = self.dataFromObject(object: object)
+                    try statement.executeUpdate(namedValues: data)
                 }
             }
         } catch let error {
@@ -132,7 +132,7 @@ public class SwiftyDB {
      */
     
     public func addObjects <S: Storable> (object: S, _ moreObjects: S...) -> Result<Bool> {
-        return addObjects([object] + moreObjects)
+        return addObjects(objects: [object] + moreObjects)
     }
     
     /**
@@ -146,15 +146,15 @@ public class SwiftyDB {
     
     public func deleteObjectsForType (type: Storable.Type, matchingFilter filter: Filter? = nil) -> Result<Bool> {
         do {
-            guard try tableExistsForType(type) else {
+            guard try tableExistsForType(type: type) else {
                 return Result.Success(true)
             }
             
-            let deleteStatement = StatementGenerator.deleteStatementForType(type, matchingFilter: filter)
+            let deleteStatement = StatementGenerator.deleteStatementForType(type: type, matchingFilter: filter)
             
             try databaseQueue.database { (database) -> Void in
-                try database.prepare(deleteStatement)
-                            .executeUpdate(filter?.parameters() ?? [:])
+                try database.prepare(query: deleteStatement)
+                    .executeUpdate(namedValues: filter?.parameters() ?? [:])
                             .finalize()
             }
         } catch let error {
@@ -177,24 +177,24 @@ public class SwiftyDB {
         
         var results: [[String: Value?]] = []
         do {
-            guard try tableExistsForType(type) else {
+            guard try tableExistsForType(type: type) else {
                 return Result.Success([])
             }
             
             /* Generate statement */
-            let query = StatementGenerator.selectStatementForType(type, matchingFilter: filter)
+            let query = StatementGenerator.selectStatementForType(type: type, matchingFilter: filter)
             
             try databaseQueue.database { (database) -> Void in
                 let parameters = filter?.parameters() ?? [:]
-                let statement = try! database.prepare(query)
-                    .execute(parameters)
+                let statement = try! database.prepare(query: query)
+                    .execute(namedValues: parameters)
                 
                 /* Create a dummy object used to extract property data */
                 let object = type.init()
-                let objectPropertyData = PropertyData.validPropertyDataForObject(object)
+                let objectPropertyData = PropertyData.validPropertyDataForObject(object: object)
                 
                 results = statement.map { row in
-                    self.parsedDataForRow(row, forPropertyData: objectPropertyData)
+                    self.parsedDataForRow(row: row, forPropertyData: objectPropertyData)
                 }
                 
                 try statement.finalize()
@@ -222,11 +222,11 @@ public class SwiftyDB {
     
     private func createTableForTypeRepresentedByObject <S: Storable> (object: S) -> Result<Bool> {
         
-        let statement = StatementGenerator.createTableStatementForTypeRepresentedByObject(object)
+        let statement = StatementGenerator.createTableStatementForTypeRepresentedByObject(object: object)
         
         do {
-            try databaseQueue.database({ (database) -> Void in
-                try database.prepare(statement)
+            try databaseQueue.database(block: { (database) -> Void in
+                try database.prepare(query: statement)
                             .executeUpdate()
                             .finalize()
             })
@@ -234,7 +234,7 @@ public class SwiftyDB {
             return .Error(error)
         }
         
-        existingTables.insert(tableNameForType(S))
+        existingTables.insert(tableNameForType(type: S.self))
         
         return .Success(true)
     }
@@ -250,7 +250,7 @@ public class SwiftyDB {
     private func dataFromObject (object: Storable) -> [String: SQLiteValue?] {
         var dictionary: [String: SQLiteValue?] = [:]
         
-        for propertyData in PropertyData.validPropertyDataForObject(object) {
+        for propertyData in PropertyData.validPropertyDataForObject(object: object) {
             dictionary[propertyData.name!] = propertyData.value as? SQLiteValue
         }
         
@@ -266,7 +266,7 @@ public class SwiftyDB {
      */
     
     private func tableExistsForType(type: Storable.Type) throws -> Bool {
-        let tableName = tableNameForType(type)
+        let tableName = tableNameForType(type: type)
         
         var exists: Bool = existingTables.contains(tableName)
         
@@ -275,8 +275,8 @@ public class SwiftyDB {
             return exists
         }
         
-        try databaseQueue.database({ (database) in
-            exists = try database.containsTable(tableName)
+        try databaseQueue.database(block: { (database) in
+            exists = try database.containsTable(tableName: tableName)
         })
         
         /* Cache the result */
@@ -311,7 +311,7 @@ public class SwiftyDB {
         var rowData: [String: Value?] = [:]
         
         for propertyData in propertyData {
-            rowData[propertyData.name!] = valueForProperty(propertyData, inRow: row)
+            rowData[propertyData.name!] = valueForProperty(propertyData: propertyData, inRow: row)
         }
         
         return rowData
@@ -327,39 +327,39 @@ public class SwiftyDB {
      */
     
     private func valueForProperty(propertyData: PropertyData, inRow row: Statement) -> Value? {
-        if row.typeForColumn(propertyData.name!) == .Null {
+        if row.typeForColumn(name: propertyData.name!) == .Null {
             return nil
         }
         
         switch propertyData.type {
-        case is NSDate.Type:    return row.dateForColumn(propertyData.name!) as? Value
-        case is NSData.Type:    return row.dataForColumn(propertyData.name!) as? Value
-        case is NSNumber.Type:  return row.numberForColumn(propertyData.name!) as? Value
+        case is NSDate.Type:    return row.dateForColumn(name: propertyData.name!) as? Value
+        case is NSData.Type:    return row.dataForColumn(name: propertyData.name!) as? Value
+        case is NSNumber.Type:  return row.numberForColumn(name: propertyData.name!) as? Value
             
-        case is String.Type:    return row.stringForColumn(propertyData.name!) as? Value
-        case is NSString.Type:  return row.nsstringForColumn(propertyData.name!) as? Value
-        case is Character.Type: return row.characterForColumn(propertyData.name!) as? Value
+        case is String.Type:    return row.stringForColumn(name: propertyData.name!) as? Value
+        case is NSString.Type:  return row.nsstringForColumn(name: propertyData.name!) as? Value
+        case is Character.Type: return row.characterForColumn(name: propertyData.name!) as? Value
             
-        case is Double.Type:    return row.doubleForColumn(propertyData.name!) as? Value
-        case is Float.Type:     return row.floatForColumn(propertyData.name!) as? Value
+        case is Double.Type:    return row.doubleForColumn(name: propertyData.name!) as? Value
+        case is Float.Type:     return row.floatForColumn(name: propertyData.name!) as? Value
             
-        case is Int.Type:       return row.integerForColumn(propertyData.name!) as? Value
-        case is Int8.Type:      return row.integer8ForColumn(propertyData.name!) as? Value
-        case is Int16.Type:     return row.integer16ForColumn(propertyData.name!) as? Value
-        case is Int32.Type:     return row.integer32ForColumn(propertyData.name!) as? Value
-        case is Int64.Type:     return row.integer64ForColumn(propertyData.name!) as? Value
-        case is UInt.Type:      return row.unsignedIntegerForColumn(propertyData.name!) as? Value
-        case is UInt8.Type:     return row.unsignedInteger8ForColumn(propertyData.name!) as? Value
-        case is UInt16.Type:    return row.unsignedInteger16ForColumn(propertyData.name!) as? Value
-        case is UInt32.Type:    return row.unsignedInteger32ForColumn(propertyData.name!) as? Value
-        case is UInt64.Type:    return row.unsignedInteger64ForColumn(propertyData.name!) as? Value
+        case is Int.Type:       return row.integerForColumn(name: propertyData.name!) as? Value
+        case is Int8.Type:      return row.integer8ForColumn(name: propertyData.name!) as? Value
+        case is Int16.Type:     return row.integer16ForColumn(name: propertyData.name!) as? Value
+        case is Int32.Type:     return row.integer32ForColumn(name: propertyData.name!) as? Value
+        case is Int64.Type:     return row.integer64ForColumn(name: propertyData.name!) as? Value
+        case is UInt.Type:      return row.unsignedIntegerForColumn(name: propertyData.name!) as? Value
+        case is UInt8.Type:     return row.unsignedInteger8ForColumn(name: propertyData.name!) as? Value
+        case is UInt16.Type:    return row.unsignedInteger16ForColumn(name: propertyData.name!) as? Value
+        case is UInt32.Type:    return row.unsignedInteger32ForColumn(name: propertyData.name!) as? Value
+        case is UInt64.Type:    return row.unsignedInteger64ForColumn(name: propertyData.name!) as? Value
             
-        case is Bool.Type:      return row.boolForColumn(propertyData.name!) as? Value
+        case is Bool.Type:      return row.boolForColumn(name: propertyData.name!) as? Value
             
         case is NSArray.Type:
-            return NSKeyedUnarchiver.unarchiveObjectWithData(row.dataForColumn(propertyData.name!)!) as? NSArray
+            return NSKeyedUnarchiver.unarchiveObject(with: row.dataForColumn(name: propertyData.name!)!) as? NSArray
         case is NSDictionary.Type:
-            return NSKeyedUnarchiver.unarchiveObjectWithData(row.dataForColumn(propertyData.name!)!) as? NSDictionary
+            return NSKeyedUnarchiver.unarchiveObject(with: row.dataForColumn(name: propertyData.name!)!) as? NSDictionary
         
             
         default:                return nil
@@ -383,14 +383,14 @@ extension SwiftyDB {
      */
     
     public func objectsForType <D where D: Storable, D: NSObject> (type: D.Type, matchingFilter filter: Filter? = nil) -> Result<[D]> {
-        let dataResults = dataForType(D.self, matchingFilter: filter)
+        let dataResults = dataForType(type: D.self, matchingFilter: filter)
         
         if !dataResults.isSuccess {
             return .Error(dataResults.error!)
         }
         
         let objects: [D] = dataResults.value!.map {
-            objectWithData($0, forType: D.self)
+            objectWithData(data: $0, forType: D.self)
         }
         
         return .Success(objects)
@@ -416,7 +416,7 @@ extension SwiftyDB {
             }
         }
         
-        object.setValuesForKeysWithDictionary(validData)
+        object.setValuesForKeys(validData)
 
         return object
     }
