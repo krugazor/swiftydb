@@ -59,7 +59,7 @@ public class SwiftyDB {
     */
     
     public init(databaseName: String) {
-        let documentsDir : String = NSSearchPathForDirectoriesInDomains(NSSearchPathDirectory.documentDirectory, NSSearchPathDomainMask.userDomainMask, true)[0]
+        let documentsDir : String = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)[0]
         path = documentsDir+"/\(databaseName).sqlite"
         
         databaseQueue = DatabaseQueue(path: path)
@@ -332,8 +332,8 @@ public class SwiftyDB {
         }
         
         switch propertyData.type {
-        case is NSDate.Type:    return row.dateForColumn(name: propertyData.name!) as? Value
-        case is NSData.Type:    return row.dataForColumn(name: propertyData.name!) as? Value
+        case is Date.Type:    return row.dateForColumn(name: propertyData.name!) as? Value
+        case is Data.Type:    return row.dataForColumn(name: propertyData.name!) as? Value
         case is NSNumber.Type:  return row.numberForColumn(name: propertyData.name!) as? Value
             
         case is String.Type:    return row.stringForColumn(name: propertyData.name!) as? Value
@@ -356,10 +356,10 @@ public class SwiftyDB {
             
         case is Bool.Type:      return row.boolForColumn(name: propertyData.name!) as? Value
             
-        case is NSArray.Type:
-            return NSKeyedUnarchiver.unarchiveObject(with: row.dataForColumn(name: propertyData.name!)!) as? NSArray
+        case is NSArray.Type:  
+            return NSKeyedUnarchiver.unarchiveObject(with: row.dataForColumn(name: propertyData.name!)! as Data) as? NSArray
         case is NSDictionary.Type:
-            return NSKeyedUnarchiver.unarchiveObject(with: row.dataForColumn(name: propertyData.name!)!) as? NSDictionary
+            return NSKeyedUnarchiver.unarchiveObject(with: row.dataForColumn(name: propertyData.name!)! as Data) as? NSDictionary
         
             
         default:                return nil

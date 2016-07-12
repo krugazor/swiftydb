@@ -12,8 +12,8 @@ import Foundation
 extension SwiftyDB {
     
     /** A global, concurrent queue with default priority */
-    private var queue: dispatch_queue_t {
-        return dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0)
+    private var queue: DispatchQueue {
+        return DispatchQueue.global(attributes: .qosUserInitiated)
     }
 
 // MARK: - Asynchronous database operations
@@ -37,7 +37,7 @@ extension SwiftyDB {
      */
     
     public func asyncAddObjects <S: Storable> (objects: [S], update: Bool = true, withCompletionHandler completionHandler: ((Result<Bool>)->Void)? = nil) {
-        dispatch_async(queue) { [weak self] () -> Void in
+        queue.asynchronously() { [weak self] () -> Void in
             guard self != nil else {
                 return
             }
@@ -55,7 +55,7 @@ extension SwiftyDB {
     
     public func asyncDataForType <S: Storable> (type: S.Type, matchingFilter filter: Filter? = nil, withCompletionHandler completionHandler: ((Result<[[String: Value?]]>)->Void)) {
         
-        dispatch_async(queue) { [weak self] () -> Void in
+        queue.asynchronously() { [weak self] () -> Void in
             guard self != nil else {
                 return
             }
@@ -72,7 +72,7 @@ extension SwiftyDB {
      */
     
     public func asyncDeleteObjectsForType (type: Storable.Type, matchingFilter filter: Filter? = nil, withCompletionHandler completionHandler: ((Result<Bool>)->Void)? = nil) {
-        dispatch_async(queue) { [weak self] () -> Void in
+        queue.asynchronously() { [weak self] () -> Void in
             guard self != nil else {
                 return
             }
@@ -95,7 +95,7 @@ extension SwiftyDB {
     
     public func asyncObjectsForType <D where D: Storable, D: NSObject> (type: D.Type, matchingFilter filter: Filter? = nil, withCompletionHandler completionHandler: ((Result<[D]>)->Void)) {
         
-        dispatch_async(queue) { [unowned self] () -> Void in
+        queue.asynchronously() { [unowned self] () -> Void in
             completionHandler(self.objectsForType(type: type, matchingFilter: filter))
         }
     }
