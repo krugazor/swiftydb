@@ -26,7 +26,7 @@ let filter = Filter.equal("name", value: "Ghost")
 ```
 */
 
-public class Filter: DictionaryLiteralConvertible {
+public class Filter: ExpressibleByDictionaryLiteral {
     public typealias Key = String
 //    Already satisified by the original SwiftyDB Value protocol
 //    public typealias Value = Value;

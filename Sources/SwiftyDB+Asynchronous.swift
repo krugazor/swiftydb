@@ -13,7 +13,7 @@ extension SwiftyDB {
     
     /** A global, concurrent queue with default priority */
     private var queue: DispatchQueue {
-        return DispatchQueue.global(attributes: .qosUserInitiated)
+        return DispatchQueue.global(qos: .userInitiated)
     }
 
 // MARK: - Asynchronous database operations
@@ -37,7 +37,7 @@ extension SwiftyDB {
      */
     
     public func asyncAddObjects <S: Storable> (objects: [S], update: Bool = true, withCompletionHandler completionHandler: ((Result<Bool>)->Void)? = nil) {
-        queue.asynchronously() { [weak self] () -> Void in
+        queue.async() { [weak self] () -> Void in
             guard self != nil else {
                 return
             }
@@ -55,7 +55,7 @@ extension SwiftyDB {
     
     public func asyncDataForType <S: Storable> (type: S.Type, matchingFilter filter: Filter? = nil, withCompletionHandler completionHandler: ((Result<[[String: Value?]]>)->Void)) {
         
-        queue.asynchronously() { [weak self] () -> Void in
+        queue.async() { [weak self] () -> Void in
             guard self != nil else {
                 return
             }
@@ -72,7 +72,7 @@ extension SwiftyDB {
      */
     
     public func asyncDeleteObjectsForType (type: Storable.Type, matchingFilter filter: Filter? = nil, withCompletionHandler completionHandler: ((Result<Bool>)->Void)? = nil) {
-        queue.asynchronously() { [weak self] () -> Void in
+        queue.async() { [weak self] () -> Void in
             guard self != nil else {
                 return
             }
@@ -95,7 +95,7 @@ extension SwiftyDB {
     
     public func asyncObjectsForType <D where D: Storable, D: NSObject> (type: D.Type, matchingFilter filter: Filter? = nil, withCompletionHandler completionHandler: ((Result<[D]>)->Void)) {
         
-        queue.asynchronously() { [unowned self] () -> Void in
+        queue.async() { [unowned self] () -> Void in
             completionHandler(self.objectsForType(type: type, matchingFilter: filter))
         }
     }
