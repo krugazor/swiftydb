@@ -30,6 +30,6 @@ Pod::Spec.new do |s|
 
   s.source_files = 'Sources/**/*'
 
-  s.dependency 'TinySQLite', :git => 'https://github.com/krugazor/tinysqlite', '~> 0.4.3'
+  s.dependency 'TinySQLite'
   
 end
