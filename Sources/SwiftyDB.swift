@@ -63,7 +63,12 @@ public class SwiftyDB {
     */
     
     public init(databaseName: String) {
+    	#if os(Linux)
+    	// TODO find a better place
+    	let documentsDir : String = ("~/.swiftydb/" as! NSString).stringByStandardizingPath
+        #else
         let documentsDir : String = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)[0]
+        #endif
         path = documentsDir+"/\(databaseName).sqlite"
         
         databaseQueue = DatabaseQueue(path: path)
