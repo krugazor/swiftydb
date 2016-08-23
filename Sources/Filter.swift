@@ -51,7 +51,11 @@ public class Filter: ExpressibleByDictionaryLiteral {
         let relationship: Relationship
         let value: Any?
         
+ 		#if os(Linux)
+        private let uniqueifier: UInt32 = UInt32(random()) 
+        #else 
         private let uniqueifier: UInt32 = arc4random()
+        #endif
         
         var uniquePropertyName: String {
             return "\(propertyName)\(uniqueifier)"

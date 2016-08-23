@@ -15,7 +15,7 @@ extension SwiftyDB {
     /** A global, concurrent queue with default priority */
     #if os(Linux)
     private var queue: dispatch_queue_t {
-        return dispatch_get_global_queue(.QOS_CLASS_USER_INITIATED)
+        return dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)
     }
     #else
     private var queue: DispatchQueue {
@@ -79,7 +79,7 @@ extension SwiftyDB {
                   return
               }
 
-              completionHandler?(self!.dataForType(type: type, matchingFilter: filter))
+              completionHandler(self!.dataForType(type: type, matchingFilter: filter))
       })
       #else
         queue.async() { [weak self] () -> Void in

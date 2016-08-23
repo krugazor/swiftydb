@@ -14,6 +14,10 @@ import tinysqlite
 public protocol Storable {
     /** Used to initialize an object to get information about its properties */
     init()
+    #if os(Linux)
+    /* because of the lack of reflection and KVO-related methods, we need to explicitly map variables back */
+    init(storable: [String: AnyObject])
+    #endif
 }
 
 /** Implement this protocol to use primary keys */
@@ -357,10 +361,27 @@ public class SwiftyDB {
         case is Bool.Type:      return row.boolForColumn(name: propertyData.name!) as? Value
             
         case is NSArray.Type:  
+        #if os(Linux)
+			// temporarily, PREVIEW-6 has the right method
+			if let data = row.sdataForColumn(name: propertyData.name!) {
+				return NSKeyedUnarchiver.unarchiveObjectWithData(data) as? NSArray
+			} else {
+				return nil
+			}
+        #else
             return NSKeyedUnarchiver.unarchiveObject(with: row.dataForColumn(name: propertyData.name!)! as Data) as? NSArray
+        #endif
         case is NSDictionary.Type:
+        #if os(Linux)
+        // temporarily, PREVIEW-6 has the right method
+            if let data = row.sdataForColumn(name: propertyData.name!) {
+            	return NSKeyedUnarchiver.unarchiveObjectWithData(data) as? NSDictionary
+            } else {
+            	return nil
+            }
+        #else
             return NSKeyedUnarchiver.unarchiveObject(with: row.dataForColumn(name: propertyData.name!)! as Data) as? NSDictionary
-        
+        #endif
             
         default:                return nil
         }
@@ -406,8 +427,7 @@ extension SwiftyDB {
      */
     
     private func objectWithData <D where D: Storable, D: NSObject> (data: [String: Value?], forType type: D.Type) -> D {
-        let object = (type as NSObject.Type).init() as! D
-        
+         
         var validData: [String: AnyObject] = [:]
         
         data.forEach { (name, value) -> () in
@@ -416,7 +436,12 @@ extension SwiftyDB {
             }
         }
         
+        #if os(Linux)
+        let object = D.init(storable: validData)
+        #else
+       	let object = (type as NSObject.Type).init() as! D
         object.setValuesForKeys(validData)
+		#endif
 
         return object
     }
