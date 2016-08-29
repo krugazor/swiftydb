@@ -11,7 +11,7 @@ import tinysqlite
 
 
 /** All objects in the database must conform to the 'Storable' protocol */
-public protocol Storable {
+public protocol Storable : NSObjectProtocol {
     /** Used to initialize an object to get information about its properties */
     init()
     #if os(Linux)
@@ -304,7 +304,7 @@ public class SwiftyDB {
      - returns:         table name as a String
      */
     private func tableNameForType(type: Storable.Type) -> String {
-        return String(type)
+        return String(describing: type)
     }
     
     /**
@@ -408,7 +408,7 @@ extension SwiftyDB {
      - returns:             Result wrapping the objects, or an error, if unsuccessful
      */
     
-    public func objectsForType <D where D: Storable, D: NSObject> (type: D.Type, matchingFilter filter: Filter? = nil) -> Result<[D]> {
+    public func objectsForType <D : Storable> (type: D.Type, matchingFilter filter: Filter? = nil) -> Result<[D]> where D: NSObject {
         let dataResults = dataForType(type: D.self, matchingFilter: filter)
         
         if !dataResults.isSuccess {
@@ -416,7 +416,7 @@ extension SwiftyDB {
         }
         
         let objects: [D] = dataResults.value!.map {
-            objectWithData(data: $0, forType: D.self)
+            objectWithData(data: $0 as! [String: Value], forType: D.self)
         }
         
         return .Success(objects)
@@ -431,21 +431,13 @@ extension SwiftyDB {
      - returns:          object of the provided type populated with the provided data
      */
     
-    private func objectWithData <D where D: Storable, D: NSObject> (data: [String: Value?], forType type: D.Type) -> D {
-         
-        var validData: [String: AnyObject] = [:]
-        
-        data.forEach { (name, value) -> () in
-            if let validValue = value as? AnyObject {
-                validData[name] = validValue
-            }
-        }
+    private func objectWithData <D : Storable> (data: [String: Value], forType type: D.Type) -> D where D: NSObject {
         
         #if os(Linux)
-        let object = D.init(storable: validData)
+        let object = D.init(storable: data)
         #else
        	let object = (type as NSObject.Type).init() as! D
-        object.setValuesForKeys(validData)
+        object.setValuesForKeys(data)
 		#endif
 
         return object

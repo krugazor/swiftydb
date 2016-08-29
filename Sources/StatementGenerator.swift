@@ -115,6 +115,6 @@ internal class StatementGenerator {
     
     /** Name of the table representing a class */
     private class func tableNameForType(type: Storable.Type) -> String {
-        return String(type)
+        return String(describing: type)
     }
 }

@@ -123,7 +123,7 @@ extension PropertyData {
         var propertyData: [PropertyData] = []
         
         /* Allow inheritance from storable superclasses using reccursion */
-        if let superclassMirror = mirror.superclassMirror where superclassMirror.subjectType is Storable.Type {
+        if let superclassMirror = mirror.superclassMirror , superclassMirror.subjectType is Storable.Type {
             propertyData += validPropertyDataForMirror(mirror: superclassMirror, ignoredProperties: ignoredProperties)
         }
         

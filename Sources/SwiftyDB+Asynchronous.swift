@@ -14,11 +14,11 @@ extension SwiftyDB {
 
     /** A global, concurrent queue with default priority */
     #if os(Linux)
-    private var queue: dispatch_queue_t {
+    var queue: dispatch_queue_t {
         return dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)
     }
     #else
-    private var queue: DispatchQueue {
+    var queue: DispatchQueue {
         return DispatchQueue.global(qos: .userInitiated)
     }
     #endif
@@ -71,7 +71,7 @@ extension SwiftyDB {
      - parameter type:      type of the objects to be retrieved
     */
 
-    public func asyncDataForType <S: Storable> (type: S.Type, matchingFilter filter: Filter? = nil, withCompletionHandler completionHandler: ((Result<[[String: Value?]]>)->Void)) {
+    public func asyncDataForType <S: Storable> (type: S.Type, matchingFilter filter: Filter? = nil, withCompletionHandler completionHandler: @escaping ((Result<[[String: Value?]]>)->Void)) {
       #if os(Linux)
       dispatch_barrier_async(queue, {
         [weak self] () -> Void in
@@ -132,14 +132,14 @@ extension SwiftyDB {
      - parameter type:      type of the objects to be retrieved
     */
 
-    public func asyncObjectsForType <D where D: Storable, D: NSObject> (type: D.Type, matchingFilter filter: Filter? = nil, withCompletionHandler completionHandler: ((Result<[D]>)->Void)) {
+    public func asyncObjectsForType <D : Storable> (type: D.Type, matchingFilter filter: Filter? = nil, withCompletionHandler completionHandler: @escaping ((Result<[D]>)->Void)) where D : NSObject {
       #if os(Linux)
       dispatch_barrier_async(queue, {
         [unowned self] () -> Void in
             completionHandler(self.objectsForType(type: type, matchingFilter: filter))
       })
       #else
-        queue.async() { [unowned self] () -> Void in
+        self.queue.async() { [unowned self] () -> Void in
             completionHandler(self.objectsForType(type: type, matchingFilter: filter))
         }
       #endif
