@@ -13,15 +13,9 @@ import Dispatch
 extension SwiftyDB {
 
     /** A global, concurrent queue with default priority */
-    #if os(Linux)
-    var queue: dispatch_queue_t {
-        return dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0)
-    }
-    #else
     var queue: DispatchQueue {
         return DispatchQueue.global(qos: .userInitiated)
     }
-    #endif
 
 // MARK: - Asynchronous database operations
 
@@ -44,24 +38,13 @@ extension SwiftyDB {
      */
 
     public func asyncAddObjects <S: Storable> (objects: [S], update: Bool = true, withCompletionHandler completionHandler: ((Result<Bool>)->Void)? = nil) {
-      #if os(Linux)
-      dispatch_barrier_async(queue, {
-        [weak self] () -> Void in
-              guard self != nil else {
-                  return
-              }
-
-              completionHandler?(self!.addObjects(objects: objects))
-      })
-      #else
-      queue.async() { [weak self] () -> Void in
+       queue.async() { [weak self] () -> Void in
             guard self != nil else {
                 return
             }
 
             completionHandler?(self!.addObjects(objects: objects))
         }
-      #endif
     }
 
     /**
@@ -72,16 +55,6 @@ extension SwiftyDB {
     */
 
     public func asyncDataForType <S: Storable> (type: S.Type, matchingFilter filter: Filter? = nil, withCompletionHandler completionHandler: @escaping ((Result<[[String: Value?]]>)->Void)) {
-      #if os(Linux)
-      dispatch_barrier_async(queue, {
-        [weak self] () -> Void in
-              guard self != nil else {
-                  return
-              }
-
-              completionHandler(self!.dataForType(type: type, matchingFilter: filter))
-      })
-      #else
         queue.async() { [weak self] () -> Void in
             guard self != nil else {
                 return
@@ -89,7 +62,6 @@ extension SwiftyDB {
 
             completionHandler(self!.dataForType(type: type, matchingFilter: filter))
         }
-      #endif
     }
 
     /**
@@ -100,16 +72,6 @@ extension SwiftyDB {
      */
 
     public func asyncDeleteObjectsForType (type: Storable.Type, matchingFilter filter: Filter? = nil, withCompletionHandler completionHandler: ((Result<Bool>)->Void)? = nil) {
-      #if os(Linux)
-      dispatch_barrier_async(queue, {
-        [weak self] () -> Void in
-              guard self != nil else {
-                  return
-              }
-
-              completionHandler?(self!.deleteObjectsForType(type: type, matchingFilter: filter))
-      })
-      #else
         queue.async() { [weak self] () -> Void in
             guard self != nil else {
                 return
@@ -117,7 +79,6 @@ extension SwiftyDB {
 
             completionHandler?(self!.deleteObjectsForType(type: type, matchingFilter: filter))
         }
-      #endif
     }
 }
 
@@ -133,15 +94,8 @@ extension SwiftyDB {
     */
 
     public func asyncObjectsForType <D : Storable> (type: D.Type, matchingFilter filter: Filter? = nil, withCompletionHandler completionHandler: @escaping ((Result<[D]>)->Void)) where D : NSObject {
-      #if os(Linux)
-      dispatch_barrier_async(queue, {
-        [unowned self] () -> Void in
-            completionHandler(self.objectsForType(type: type, matchingFilter: filter))
-      })
-      #else
-        self.queue.async() { [unowned self] () -> Void in
+         self.queue.async() { [unowned self] () -> Void in
             completionHandler(self.objectsForType(type: type, matchingFilter: filter))
         }
-      #endif
     }
 }

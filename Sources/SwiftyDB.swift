@@ -16,7 +16,7 @@ public protocol Storable : NSObjectProtocol {
     init()
     #if os(Linux)
     /* because of the lack of reflection and KVO-related methods, we need to explicitly map variables back */
-    init(storable: [String: AnyObject])
+    init(storable: [String: Value])
     #endif
 }
 
@@ -65,7 +65,7 @@ public class SwiftyDB {
     public init(databaseName: String) {
     	#if os(Linux)
     	// TODO find a better place
-    	let documentsDir : String = ("~/.swiftydb/" as! NSString).stringByStandardizingPath
+    	let documentsDir : String = "~/.swiftydb/"
         #else
         let documentsDir : String = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)[0]
         #endif
@@ -366,27 +366,9 @@ public class SwiftyDB {
         case is Bool.Type:      return row.boolForColumn(name: propertyData.name!) as? Value
             
         case is NSArray.Type:  
-        #if os(Linux)
-			// temporarily, PREVIEW-6 has the right method
-			if let data = row.sdataForColumn(name: propertyData.name!) {
-				return NSKeyedUnarchiver.unarchiveObjectWithData(data) as? NSArray
-			} else {
-				return nil
-			}
-        #else
-            return NSKeyedUnarchiver.unarchiveObject(with: row.dataForColumn(name: propertyData.name!)! as Data) as? NSArray
-        #endif
+            return NSKeyedUnarchiver.unarchiveObject(with: row.sdataForColumn(name: propertyData.name!)! as Data) as? NSArray
         case is NSDictionary.Type:
-        #if os(Linux)
-        // temporarily, PREVIEW-6 has the right method
-            if let data = row.sdataForColumn(name: propertyData.name!) {
-            	return NSKeyedUnarchiver.unarchiveObjectWithData(data) as? NSDictionary
-            } else {
-            	return nil
-            }
-        #else
-            return NSKeyedUnarchiver.unarchiveObject(with: row.dataForColumn(name: propertyData.name!)! as Data) as? NSDictionary
-        #endif
+             return NSKeyedUnarchiver.unarchiveObject(with: row.sdataForColumn(name: propertyData.name!)! as Data) as? NSDictionary
             
         default:                return nil
         }
