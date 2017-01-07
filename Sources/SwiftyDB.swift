@@ -229,7 +229,7 @@ public class SwiftyDB {
     - returns:          Result type indicating the success of the query
     */
     
-    private func createTableForTypeRepresentedByObject <S: Storable> (object: S) -> Result<Bool> {
+    @discardableResult private func createTableForTypeRepresentedByObject <S: Storable> (object: S) -> Result<Bool> {
         
         let statement = StatementGenerator.createTableStatementForTypeRepresentedByObject(object: object)
         
