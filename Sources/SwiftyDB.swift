@@ -5,7 +5,9 @@
 //  Created by Øyvind Grimnes on 03/11/15.
 //
 
-
+#if os(Linux)
+import Glibc
+#endif
 import Foundation
 import tinysqlite
 
@@ -65,7 +67,8 @@ public class SwiftyDB {
     public init(databaseName: String) {
     	#if os(Linux)
     	// TODO find a better place
-    	let documentsDir : String = "~/.swiftydb/"
+    	let documentsDir : String = "~/.swiftydb/".stringByExpandingTildeInPath
+    	print("using \(documentsDir) for the database")
         #else
         let documentsDir : String = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)[0]
         #endif
@@ -425,3 +428,14 @@ extension SwiftyDB {
         return object
     }
 }
+
+#if os(Linux)
+extension String {
+	var stringByExpandingTildeInPath : String {
+		guard let out = getenv("HOME") else { return String(self) }
+        guard let homepath = String(validatingUTF8: out) else { return String(self) }
+        
+        return self.replacingOccurrences(of: "~", with: homepath)
+	}
+}
+#endif
