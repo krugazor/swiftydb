@@ -77,8 +77,19 @@ public class SwiftyDB {
         databaseQueue = DatabaseQueue(path: path)
     }
     
+    public init(name: String, directory: String) {
+        path = directory+"/\(name).sqlite"
+        
+        databaseQueue = DatabaseQueue(path: path)
+    }
     
-// MARK: - Database operations
+    public init(path: String) {
+        self.path = path
+        
+        databaseQueue = DatabaseQueue(path: path)
+    }
+    
+    // MARK: - Database operations
     
     /**
     Add an object to the database
