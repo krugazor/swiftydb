@@ -96,15 +96,18 @@ internal class StatementGenerator {
         return statement
     }
     
-    internal class func selectStatementForType(type: Storable.Type, matchingFilter filter: Filter?, limit: Int?, orderBy: String?) -> String {
+    internal class func selectStatementForType(type: Storable.Type, matchingFilter filter: Filter?, limit: Int? = nil, offset: Int? = nil, orderBy: String? = nil) -> String {
         
         var statement = selectStatementForType(type: type, matchingFilter: filter)
         
+        if orderBy != nil {
+            statement += " ORDER BY " + orderBy! + " ASC"
+        }
         if limit != nil {
             statement += " LIMIT " + String(limit!)
         }
-        if orderBy != nil {
-            statement += " ORDER BY " + orderBy!
+        if offset != nil {
+            statement += " OFFSET " + String(limit!)
         }
         
         return statement

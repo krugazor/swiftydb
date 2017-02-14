@@ -236,12 +236,13 @@ public class SwiftyDB {
      - parameter filter:    `Filter` object containing the filters for the query
      - parameter type:      type of the objects for which to retrieve data
      - parameter limit:     max number of lines to get
+     - parameter offset:    offsets the returned rows (especially useful with limit)
      - parameter orderBy:   pre-sort the returned data according to that property/column
      
      - returns:             Result type wrapping an array with the dictionaries representing objects, or an error if unsuccessful
      */
     
-    public func dataForType <S: Storable> (type: S.Type, matchingFilter filter: Filter? = nil, limit: Int?, orderBy: String?) -> Result<[[String: Value?]]> {
+    public func dataForType <S: Storable> (type: S.Type, matchingFilter filter: Filter? = nil, limit: Int? = nil, offset: Int? = nil, orderBy: String? = nil) -> Result<[[String: Value?]]> {
         
         var results: [[String: Value?]] = []
         do {
@@ -250,7 +251,7 @@ public class SwiftyDB {
             }
             
             /* Generate statement */
-            let query = StatementGenerator.selectStatementForType(type: type, matchingFilter: filter, limit: limit, orderBy: orderBy)
+            let query = StatementGenerator.selectStatementForType(type: type, matchingFilter: filter, limit: limit, offset: offset, orderBy: orderBy)
             
             try databaseQueue.database { (database) -> Void in
                 let parameters = filter?.parameters() ?? [:]
@@ -469,12 +470,13 @@ extension SwiftyDB {
      - parameter filter:   `Filter` object containing the filters for the query
      - parameter type:      type of the objects to be retrieved
      - parameter limit:     limits the amount of data returned to limit rows
+     - parameter offset:    offsets the amount of data returned (particularly useful in conjunction with limit)
      - parameter orderBy:   pre-orders the output data
      
      - returns:             Result wrapping the objects, or an error, if unsuccessful
      */
-   public func objectsForType <D : Storable> (type: D.Type, matchingFilter filter: Filter? = nil, limit: Int? = nil, orderBy: String? = nil) -> Result<[D]> where D: NSObject {
-        let dataResults = dataForType(type: D.self, matchingFilter: filter, limit: limit, orderBy: orderBy)
+    public func objectsForType <D : Storable> (type: D.Type, matchingFilter filter: Filter? = nil, limit: Int? = nil, offset: Int? = nil, orderBy: String? = nil) -> Result<[D]> where D: NSObject {
+    let dataResults = dataForType(type: D.self, matchingFilter: filter, limit: limit, offset: offset,orderBy: orderBy)
     
         if !dataResults.isSuccess {
             return .Error(dataResults.error!)
