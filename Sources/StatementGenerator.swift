@@ -107,7 +107,7 @@ internal class StatementGenerator {
             statement += " LIMIT " + String(limit!)
         }
         if offset != nil {
-            statement += " OFFSET " + String(limit!)
+            statement += " OFFSET " + String(offset!)
         }
         
         return statement

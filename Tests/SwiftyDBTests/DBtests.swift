@@ -106,6 +106,6 @@ class DBTests : XCTestCase {
             return
         }
         
-        XCTAssertEqual(twentyOffsetted?.value![0].objectid!.intValue, 21, "expected 21, got " + String(describing: twentyOffsetted?.value![0].objectid!.intValue))
+        XCTAssertEqual(twentyOffsetted?.value![0].objectid!.intValue, 11, "expected 11, got " + String(describing: twentyOffsetted?.value![0].objectid!.intValue))
     }
 }
