@@ -96,7 +96,21 @@ internal class StatementGenerator {
         return statement
     }
     
-    internal class func deleteStatementForType(type: Storable.Type, matchingFilter filter: Filter?) -> String {
+    internal class func selectStatementForType(type: Storable.Type, matchingFilter filter: Filter?, limit: Int?, orderBy: String?) -> String {
+        
+        var statement = selectStatementForType(type: type, matchingFilter: filter)
+        
+        if limit != nil {
+            statement += " LIMIT " + String(limit!)
+        }
+        if orderBy != nil {
+            statement += " ORDER BY " + orderBy!
+        }
+        
+        return statement
+    }
+    
+   internal class func deleteStatementForType(type: Storable.Type, matchingFilter filter: Filter?) -> String {
         
         let tableName =  tableNameForType(type: type)
         

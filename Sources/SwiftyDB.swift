@@ -230,6 +230,51 @@ public class SwiftyDB {
     }
     
     
+    /**
+     Get data for a specified type, matching a filter, from the database
+     
+     - parameter filter:    `Filter` object containing the filters for the query
+     - parameter type:      type of the objects for which to retrieve data
+     - parameter limit:     max number of lines to get
+     - parameter orderBy:   pre-sort the returned data according to that property/column
+     
+     - returns:             Result type wrapping an array with the dictionaries representing objects, or an error if unsuccessful
+     */
+    
+    public func dataForType <S: Storable> (type: S.Type, matchingFilter filter: Filter? = nil, limit: Int?, orderBy: String?) -> Result<[[String: Value?]]> {
+        
+        var results: [[String: Value?]] = []
+        do {
+            guard try tableExistsForType(type: type) else {
+                return Result.Success([])
+            }
+            
+            /* Generate statement */
+            let query = StatementGenerator.selectStatementForType(type: type, matchingFilter: filter, limit: limit, orderBy: orderBy)
+            
+            try databaseQueue.database { (database) -> Void in
+                let parameters = filter?.parameters() ?? [:]
+                let statement = try! database.prepare(query: query)
+                    .execute(namedValues: parameters)
+                
+                /* Create a dummy object used to extract property data */
+                let object = type.init()
+                let objectPropertyData = PropertyData.validPropertyDataForObject(object: object)
+                
+                results = statement.map { row in
+                    self.parsedDataForRow(row: row, forPropertyData: objectPropertyData)
+                }
+                
+                try statement.finalize()
+            }
+        } catch let error {
+            return .Error(error)
+        }
+        
+        return .Success(results)
+    }
+    
+    
     
 // MARK: - Private functions
     
@@ -407,6 +452,30 @@ extension SwiftyDB {
     public func objectsForType <D : Storable> (type: D.Type, matchingFilter filter: Filter? = nil) -> Result<[D]> where D: NSObject {
         let dataResults = dataForType(type: D.self, matchingFilter: filter)
         
+        if !dataResults.isSuccess {
+            return .Error(dataResults.error!)
+        }
+        
+        let objects: [D] = dataResults.value!.map {
+            objectWithData(data: $0 as! [String: Value], forType: D.self)
+        }
+        
+        return .Success(objects)
+    }
+    
+    /**
+     Get objects of a specified type, matching a filter, from the database
+     
+     - parameter filter:   `Filter` object containing the filters for the query
+     - parameter type:      type of the objects to be retrieved
+     - parameter limit:     limits the amount of data returned to limit rows
+     - parameter orderBy:   pre-orders the output data
+     
+     - returns:             Result wrapping the objects, or an error, if unsuccessful
+     */
+   public func objectsForType <D : Storable> (type: D.Type, matchingFilter filter: Filter? = nil, limit: Int? = nil, orderBy: String? = nil) -> Result<[D]> where D: NSObject {
+        let dataResults = dataForType(type: D.self, matchingFilter: filter, limit: limit, orderBy: orderBy)
+    
         if !dataResults.isSuccess {
             return .Error(dataResults.error!)
         }
