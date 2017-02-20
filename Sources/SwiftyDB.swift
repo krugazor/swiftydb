@@ -401,7 +401,8 @@ public class SwiftyDB {
         }
         
         switch propertyData.type {
-        case is Date.Type:    return row.dateForColumn(name: propertyData.name!) as? Value
+        case is Date.Type:    return row.sdateForColumn(name: propertyData.name!) as? Value
+        case is NSDate.Type:    return row.dateForColumn(name: propertyData.name!) as? Value
         case is Data.Type:    return row.dataForColumn(name: propertyData.name!) as? Value
         case is NSNumber.Type:  return row.numberForColumn(name: propertyData.name!) as? Value
             

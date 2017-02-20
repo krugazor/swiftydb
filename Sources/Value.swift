@@ -35,4 +35,5 @@ extension Double: Value {}
 
 extension NSData: Value {}
 extension NSDate: Value {}
+extension Date: Value {}
 extension NSNumber: Value {}

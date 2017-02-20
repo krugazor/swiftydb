@@ -51,6 +51,7 @@ internal struct PropertyData {
         case is Optional<Character>.Type:   return Character.self
             
         case is Optional<NSDate>.Type:      return NSDate.self
+        case is Optional<Date>.Type:        return Date.self
         case is Optional<NSNumber>.Type:    return NSNumber.self
         case is Optional<NSData>.Type:      return NSData.self
             

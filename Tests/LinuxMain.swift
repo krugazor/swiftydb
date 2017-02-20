@@ -1,4 +1,4 @@
-@testable import SwiftyDBTestSuite
+@testable import SwiftyDBTests
 
 import XCTest
 
