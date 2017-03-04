@@ -21,7 +21,7 @@ internal enum SQLiteDatatype: String {
             self.init(rawValue: "INTEGER")
         case is Double.Type, is Float.Type, is NSDate.Type, is Date.Type:
             self.init(rawValue: "REAL")
-        case is NSData.Type:
+        case is NSData.Type, is Data.Type:
             self.init(rawValue: "BLOB")
         case is NSNumber.Type:
             self.init(rawValue: "NUMERIC")

@@ -34,6 +34,7 @@ extension Float: Value {}
 extension Double: Value {}
 
 extension NSData: Value {}
+extension Data: Value {}
 extension NSDate: Value {}
 extension Date: Value {}
 extension NSNumber: Value {}
